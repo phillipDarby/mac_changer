@@ -1,6 +1,15 @@
 #! /usr/bin/env python
 
 import scapy.all as scap
+import optparse
+
+def get_arguments():
+    parser = optparse.OptionParser()
+    parser.add_option("-t", "--target", dest="target", help="Target IP / IP range.")
+    (options, arguments) = parser.parse_args()
+    if not options.target:
+        parser.error("[-] Please specify a target e.g. 192.168.2.0/24 , use --help for more info.")
+    return options
 
 def scan(ip):
     arp_request = scap.ARP(pdst=ip)
@@ -21,5 +30,6 @@ def print_result(results_list):
     for client in results_list:
         print(client["ip"] + "\t\t" + client["mac"])
 
-scan_result = scan("172.20.69.0/24")
+args = get_arguments()
+scan_result = scan(args.target)
 print_result(scan_result)
