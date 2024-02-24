@@ -8,7 +8,18 @@ def scan(ip):
     arp_request_broadcast = broadcast/arp_request
 
     answered_list = scap.srp(arp_request_broadcast, timeout=1, verbose=False)[0]
-    for element in answered_list:
-        print(element[1].psrc + "\t\t" + element[1].hwsrc)
+    clients_list = []
 
-scan("172.20.69.0/24")
+    for element in answered_list:
+        client_dict = {"ip": element[1].psrc, "mac": element[1].hwsrc}
+        clients_list.append(client_dict)
+    
+    return clients_list
+
+def print_result(results_list):
+    print("IP Address\t\tMAC Address\n----------------------------------------------")
+    for client in results_list:
+        print(client["ip"] + "\t\t" + client["mac"])
+
+scan_result = scan("172.20.69.0/24")
+print_result(scan_result)
