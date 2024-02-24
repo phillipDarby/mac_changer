@@ -1,12 +1,12 @@
 #! /usr/bin/env python
 
 import scapy.all as scap
-import optparse
+import argparse
 
 def get_arguments():
-    parser = optparse.OptionParser()
-    parser.add_option("-t", "--target", dest="target", help="Target IP / IP range.")
-    (options, arguments) = parser.parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-t", "--target", dest="target", help="Target IP / IP range.")
+    options = parser.parse_args()
     if not options.target:
         parser.error("[-] Please specify a target e.g. 192.168.2.0/24 , use --help for more info.")
     return options
